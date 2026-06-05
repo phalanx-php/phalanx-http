@@ -7,7 +7,7 @@ namespace Phalanx\Http;
 use InvalidArgumentException;
 use Phalanx\AppHost;
 use Phalanx\Application;
-use Phalanx\ApplicationBuilder;
+use Phalanx\ApplicationBuilder as RuntimeApplicationBuilder;
 use Phalanx\Boot\AppContext;
 use Phalanx\Middleware\ServiceTransformationMiddleware;
 use Phalanx\Middleware\TaskMiddleware;
@@ -18,14 +18,14 @@ use Phalanx\Trace\Trace;
 use Phalanx\Worker\WorkerDispatch;
 
 /**
- * Facade builder for Http HTTP applications.
+ * Facade builder for Http applications.
  *
- * Bootstrap files should enter through `Http::starting($context)`, not
+ * Bootstrap files should enter through `Server::starting($context)`, not
  * through the root Runtime ApplicationBuilder plus a manually assembled runner.
  */
-final class HttpApplicationBuilder
+final class ApplicationBuilder
 {
-    private ApplicationBuilder $app;
+    private readonly RuntimeApplicationBuilder $app;
 
     /** @var list<RouteGroup|string|list<string>|array<string, class-string>> */
     private array $routeSources = [];
@@ -45,7 +45,7 @@ final class HttpApplicationBuilder
 
     private ?bool $quiet = null;
 
-    private ?HttpServerConfig $serverConfig = null;
+    private ?\Phalanx\Http\ServerConfig $serverConfig = null;
 
     private ?string $banner = null;
 
@@ -176,14 +176,14 @@ final class HttpApplicationBuilder
         return $this;
     }
 
-    public function withServerConfig(HttpServerConfig $config): self
+    public function withServerConfig(\Phalanx\Http\ServerConfig $config): self
     {
         $this->serverConfig = $config;
 
         return $this;
     }
 
-    public function build(): HttpApplication
+    public function build(): \Phalanx\Http\Application
     {
         $host = $this->app->compile();
         $routes = RouteGroup::of([]);
@@ -192,7 +192,7 @@ final class HttpApplicationBuilder
             $routes = $routes->merge(self::loadRoutes($host, $source));
         }
 
-        return new HttpApplication(
+        return new \Phalanx\Http\Application(
             host: $host,
             routes: $routes,
             serverConfig: $this->hasServerConfigInput() ? $this->resolveServerConfig() : null,
@@ -266,11 +266,11 @@ final class HttpApplicationBuilder
         }
     }
 
-    private function resolveServerConfig(): HttpServerConfig
+    private function resolveServerConfig(): \Phalanx\Http\ServerConfig
     {
-        $base = $this->serverConfig ?? HttpServerConfig::fromContext($this->context);
+        $base = $this->serverConfig ?? \Phalanx\Http\ServerConfig::fromContext($this->context);
 
-        return new HttpServerConfig(
+        return new \Phalanx\Http\ServerConfig(
             host: $this->host ?? $base->host,
             port: $this->port ?? $base->port,
             requestTimeout: $this->requestTimeout ?? $base->requestTimeout,
@@ -306,27 +306,19 @@ final class HttpApplicationBuilder
             return true;
         }
 
-        foreach (
-            [
-                'host',
-                'port',
-                'ignition_enabled',
-                'quiet',
-                'PHALANX_HOST',
-                'PHALANX_PORT',
-                'PHALANX_IGNITION_ENABLED',
-                'PHALANX_QUIET',
-                'request_timeout',
-                'drain_timeout',
-                'PHALANX_REQUEST_TIMEOUT',
-                'PHALANX_DRAIN_TIMEOUT',
-            ] as $key
-        ) {
-            if ($this->context->has($key)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any([
+            'host',
+            'port',
+            'ignition_enabled',
+            'quiet',
+            'PHALANX_HOST',
+            'PHALANX_PORT',
+            'PHALANX_IGNITION_ENABLED',
+            'PHALANX_QUIET',
+            'request_timeout',
+            'drain_timeout',
+            'PHALANX_REQUEST_TIMEOUT',
+            'PHALANX_DRAIN_TIMEOUT',
+        ], fn($key) => $this->context->has($key));
     }
 }

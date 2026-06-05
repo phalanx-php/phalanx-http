@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Http\Tests\Unit\Http\Upgrade;
+namespace Phalanx\Http\Tests\Unit\Upgrade;
 
 use Swoole\Http\Response;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
-use Phalanx\Http\Http\Upgrade\HttpUpgradeable;
-use Phalanx\Http\Http\Upgrade\UpgradeRegistry;
-use Phalanx\Http\HttpRequestResource;
+use Phalanx\Http\Upgrade\Upgradeable;
+use Phalanx\Http\Upgrade\Registry;
+use Phalanx\Http\RequestResource;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 
-final class UpgradeRegistryTest extends TestCase
+final class RegistryTest extends TestCase
 {
     #[Test]
     public function resolvesRegisteredTokenCaseInsensitive(): void
     {
-        $registry = new UpgradeRegistry();
+        $registry = new \Phalanx\Http\Upgrade\Registry();
         $upgradeable = self::stubUpgradeable();
         $registry->register('WebSocket', $upgradeable);
 
@@ -30,7 +30,7 @@ final class UpgradeRegistryTest extends TestCase
     #[Test]
     public function unregisteredTokenResolvesNull(): void
     {
-        $registry = new UpgradeRegistry();
+        $registry = new \Phalanx\Http\Upgrade\Registry();
         self::assertNull($registry->resolve('h2c'));
         self::assertFalse($registry->supports('h2c'));
     }
@@ -38,7 +38,7 @@ final class UpgradeRegistryTest extends TestCase
     #[Test]
     public function tokensListsAllRegistered(): void
     {
-        $registry = new UpgradeRegistry();
+        $registry = new \Phalanx\Http\Upgrade\Registry();
         $registry->register('websocket', self::stubUpgradeable());
         $registry->register('h2c', self::stubUpgradeable());
 
@@ -47,13 +47,13 @@ final class UpgradeRegistryTest extends TestCase
         self::assertSame(['h2c', 'websocket'], $tokens);
     }
 
-    private static function stubUpgradeable(): HttpUpgradeable
+    private static function stubUpgradeable(): \Phalanx\Http\Upgrade\Upgradeable
     {
-        return new class () implements HttpUpgradeable {
+        return new class () implements \Phalanx\Http\Upgrade\Upgradeable {
             public function upgrade(
                 ServerRequestInterface $request,
                 Response $target,
-                HttpRequestResource $requestResource,
+                \Phalanx\Http\RequestResource $requestResource,
             ): ManagedResourceHandle {
                 throw new \RuntimeException('not invoked in this test');
             }

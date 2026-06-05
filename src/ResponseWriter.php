@@ -7,11 +7,11 @@ namespace Phalanx\Http;
 use Psr\Http\Message\ResponseInterface;
 use Swoole\Http\Response;
 
-final readonly class HttpResponseWriter
+final readonly class ResponseWriter
 {
     private const int CHUNK_SIZE = 2097152;
 
-    public function write(ResponseInterface $source, Response $target, HttpRequestResource $request): void
+    public function write(ResponseInterface $source, Response $target, \Phalanx\Http\RequestResource $request): void
     {
         if (!$target->isWritable()) {
             $request->abort('response is not writable before headers');

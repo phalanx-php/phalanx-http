@@ -6,15 +6,15 @@ namespace Phalanx\Http\Tests\Integration;
 
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Http\HttpServerConfig;
+use Phalanx\Http\ServerConfig;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\RouteGroup;
-use Phalanx\Http\Tests\Support\HttpTestCase;
+use Phalanx\Http\Tests\Support\TestCase;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Task\Scopeable;
 use PHPUnit\Framework\Attributes\Test;
 
-final class HttpApplicationBuilderTest extends HttpTestCase
+final class ApplicationBuilderTest extends TestCase
 {
     #[Test]
     public function buildsDispatchableApplicationWithServerConfigAndDefaultPoweredByHeader(): void
@@ -53,7 +53,7 @@ final class HttpApplicationBuilderTest extends HttpTestCase
                 'GET /hello' => BuilderHelloRoute::class,
             ])
             ->build();
-        $runtime = new \Phalanx\Http\HttpServerConfig(host: '127.0.0.9', port: 9099);
+        $runtime = new \Phalanx\Http\ServerConfig(host: '127.0.0.9', port: 9099);
 
         self::assertSame($runtime, $app->serverConfig($runtime));
     }
@@ -64,15 +64,15 @@ final class HttpApplicationBuilderTest extends HttpTestCase
         $this->scope->run(static function (ExecutionScope $_scope): void {
             $custom = self::http()
                 ->routes(['GET /hello' => BuilderHelloRoute::class])
-                ->withServerConfig(new HttpServerConfig(poweredBy: 'Custom'))
+                ->withServerConfig(new \Phalanx\Http\ServerConfig(poweredBy: 'Custom'))
                 ->build();
             $disabled = self::http()
                 ->routes(['GET /hello' => BuilderHelloRoute::class])
-                ->withServerConfig(new HttpServerConfig(poweredBy: null))
+                ->withServerConfig(new \Phalanx\Http\ServerConfig(poweredBy: null))
                 ->build();
             $explicit = self::http()
                 ->routes(['GET /explicit' => BuilderExplicitPoweredByRoute::class])
-                ->withServerConfig(new HttpServerConfig(poweredBy: 'Custom'))
+                ->withServerConfig(new \Phalanx\Http\ServerConfig(poweredBy: 'Custom'))
                 ->build();
 
             try {

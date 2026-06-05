@@ -8,9 +8,9 @@ use Phalanx\AppHost;
 use Phalanx\Boot\AppContext;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Http\Runtime;
-use Phalanx\Http\HttpApplication;
-use Phalanx\Http\HttpRuntimeRunner;
-use Phalanx\Http\HttpServerConfig;
+use Phalanx\Http\Application;
+use Phalanx\Http\RuntimeRunner;
+use Phalanx\Http\ServerConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -20,7 +20,7 @@ final class HttpServerConfigTest extends TestCase
     #[Test]
     public function buildsFromRuntimeContextWithoutProcessGlobals(): void
     {
-        $config = HttpServerConfig::fromContext(new AppContext([
+        $config = \Phalanx\Http\ServerConfig::fromContext(new AppContext([
             'PHALANX_HOST' => '127.0.0.1',
             'PHALANX_PORT' => '9090',
             'PHALANX_REQUEST_TIMEOUT' => '2.5',
@@ -45,7 +45,7 @@ final class HttpServerConfigTest extends TestCase
     #[Test]
     public function staticHandlerAndCompressionFlowFromContext(): void
     {
-        $config = HttpServerConfig::fromContext(new AppContext([
+        $config = \Phalanx\Http\ServerConfig::fromContext(new AppContext([
             'PHALANX_DOCUMENT_ROOT' => '/srv/static',
             'PHALANX_ENABLE_STATIC_HANDLER' => 'true',
             'PHALANX_HTTP_COMPRESSION' => 'false',
@@ -59,7 +59,7 @@ final class HttpServerConfigTest extends TestCase
     #[Test]
     public function poweredByHeaderCanBeDisabledFromContext(): void
     {
-        $config = HttpServerConfig::fromContext(new AppContext([
+        $config = \Phalanx\Http\ServerConfig::fromContext(new AppContext([
             'PHALANX_POWERED_BY' => 'off',
         ]));
 
@@ -70,9 +70,9 @@ final class HttpServerConfigTest extends TestCase
     public function phalanxApplicationConfigOverridesRuntimeFallback(): void
     {
         $host = $this->createStub(AppHost::class);
-        $runtime = new HttpServerConfig(host: '0.0.0.0', port: 8080);
-        $explicit = new HttpServerConfig(host: '127.0.0.2', port: 8181);
-        $application = new HttpApplication($host, RouteGroup::of([]), $explicit);
+        $runtime = new \Phalanx\Http\ServerConfig(host: '0.0.0.0', port: 8080);
+        $explicit = new \Phalanx\Http\ServerConfig(host: '127.0.0.2', port: 8181);
+        $application = new \Phalanx\Http\Application($host, RouteGroup::of([]), $explicit);
 
         self::assertSame($explicit, $application->serverConfig($runtime));
     }
@@ -81,8 +81,8 @@ final class HttpServerConfigTest extends TestCase
     public function runtimeFallbackIsUsedWhenApplicationHasNoServerConfig(): void
     {
         $host = $this->createStub(AppHost::class);
-        $runtime = new HttpServerConfig(host: '127.0.0.3', port: 8282);
-        $application = new HttpApplication($host, RouteGroup::of([]));
+        $runtime = new \Phalanx\Http\ServerConfig(host: '127.0.0.3', port: 8282);
+        $application = new \Phalanx\Http\Application($host, RouteGroup::of([]));
 
         self::assertSame($runtime, $application->serverConfig($runtime));
     }
@@ -95,28 +95,28 @@ final class HttpServerConfigTest extends TestCase
         }
 
         $host = $this->createStub(AppHost::class);
-        $application = new HttpApplication($host, RouteGroup::of([]));
+        $application = new \Phalanx\Http\Application($host, RouteGroup::of([]));
 
         try {
-            $runner = (new Runtime())->getRunner($application);
+            $runner = new Runtime()->getRunner($application);
         } finally {
             restore_error_handler();
         }
 
-        self::assertInstanceOf(HttpRuntimeRunner::class, $runner);
+        self::assertInstanceOf(\Phalanx\Http\RuntimeRunner::class, $runner);
     }
 
     #[Test]
     public function bannerDefaultsToNull(): void
     {
-        self::assertNull(HttpServerConfig::defaults()->banner);
-        self::assertNull(HttpServerConfig::fromContext(new AppContext())->banner);
+        self::assertNull(\Phalanx\Http\ServerConfig::defaults()->banner);
+        self::assertNull(\Phalanx\Http\ServerConfig::fromContext(new AppContext())->banner);
     }
 
     #[Test]
     public function bannerIsPreservedThroughConstructor(): void
     {
-        $config = new HttpServerConfig(banner: 'Test banner {url}');
+        $config = new \Phalanx\Http\ServerConfig(banner: 'Test banner {url}');
 
         self::assertSame('Test banner {url}', $config->banner);
     }
@@ -129,10 +129,10 @@ final class HttpServerConfigTest extends TestCase
         }
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Http runtime expects a HttpApplication');
+        $this->expectExceptionMessage('HTTP runtime expects a Phalanx\\Http\\Application');
 
         try {
-            (new Runtime())->getRunner($this->createStub(AppHost::class));
+            new Runtime()->getRunner($this->createStub(AppHost::class));
         } finally {
             restore_error_handler();
         }

@@ -6,8 +6,7 @@ namespace Phalanx\Http\Testing;
 
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
-use Phalanx\Http\HttpApplication;
-use Phalanx\Testing\Attribute\Lens;
+use Phalanx\Testing\Attribute\Lens as LensAttribute;
 use Phalanx\Testing\Lens as LensContract;
 use Phalanx\Testing\TestApp;
 use Psr\Http\Message\ServerRequestInterface;
@@ -15,25 +14,25 @@ use Psr\Http\Message\ServerRequestInterface;
 /**
  * HTTP test lens for a Http application.
  *
- * Drives ServerRequest dispatch through HttpApplication::dispatch() and
+ * Drives ServerRequest dispatch through Application::dispatch() and
  * returns a TestResponse with userland-familiar assertions. Carries fluent
  * per-test state (acting identity, default headers) that reset() clears
  * between tests.
  *
- * The lens reaches into the HttpApplication registered as a primary app
+ * The lens reaches into the Application registered as a primary app
  * via TestApp::withPrimary(). Booting:
  *
  *     $http = Http::starting($context)->routes($routes)->build();
- *     $app  = $this->testApp($context, new HttpTestableBundle())->withPrimary($http);
+ *     $app  = $this->testApp($context, new TestableBundle())->withPrimary($http);
  *     $app->http->postJson('/api/orders', ['sku' => 'WIDGET'])->assertCreated();
  */
-#[Lens(
+#[LensAttribute(
     accessor: 'http',
     returns: self::class,
-    factory: HttpLensFactory::class,
-    requires: [HttpApplication::class],
+    factory: \Phalanx\Http\Testing\LensFactory::class,
+    requires: [\Phalanx\Http\Application::class],
 )]
-final class HttpLens implements LensContract
+final class Lens implements LensContract
 {
     /** @var array<string, string> */
     private array $defaultHeaders = [];
@@ -43,13 +42,13 @@ final class HttpLens implements LensContract
     public function __construct(
         /** @phpstan-ignore property.onlyWritten (GC pin — keeps TestApp alive while lens exists) */
         private readonly TestApp $app,
-        private readonly HttpApplication $http,
+        private readonly \Phalanx\Http\Application $http,
     ) {
     }
 
     /**
      * Attach an identity to subsequent requests via the standard
-     * `'identity'` request attribute. The value is opaque to HttpLens —
+     * `'identity'` request attribute. The value is opaque to Lens —
      * userland authentication middleware reads it.
      */
     public function actingAs(mixed $identity): self

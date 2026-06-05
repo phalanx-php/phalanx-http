@@ -11,7 +11,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
 use Swoole\Http\Request;
 
-final readonly class HttpRequestFactory
+final readonly class RequestFactory
 {
     public function create(Request $request): ServerRequestInterface
     {
@@ -32,7 +32,7 @@ final readonly class HttpRequestFactory
             ? (string) $request->rawContent()
             : '';
 
-        return (new ServerRequest($method, $uri, $headers, Utils::streamFor($body), $protocol, $server))
+        return new ServerRequest($method, $uri, $headers, Utils::streamFor($body), $protocol, $server)
             ->withQueryParams($query)
             ->withCookieParams($cookies)
             ->withParsedBody($parsedBody)

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phalanx\Http\Tests\Unit;
 
-use Phalanx\Http\HttpRunner;
+use Phalanx\Http\Runner;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
@@ -72,7 +72,7 @@ final class HttpRunnerBannerTest extends TestCase
 
     private static function resolve(string $banner, string $listen): string
     {
-        $method = new ReflectionMethod(HttpRunner::class, 'resolveBanner');
+        $method = new ReflectionMethod(\Phalanx\Http\Runner::class, 'resolveBanner');
 
         return $method->invoke(null, $banner, $listen);
     }

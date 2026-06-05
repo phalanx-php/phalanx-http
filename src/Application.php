@@ -8,9 +8,9 @@ use Phalanx\AppHost;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-final class HttpApplication
+final class Application
 {
-    private ?HttpRunner $runner = null;
+    private ?\Phalanx\Http\Runner $runner = null;
 
     private bool $started = false;
 
@@ -20,7 +20,7 @@ final class HttpApplication
     public function __construct(
         private readonly AppHost $host,
         private readonly RouteGroup $routes,
-        private readonly ?HttpServerConfig $serverConfig = null,
+        private readonly ?\Phalanx\Http\ServerConfig $serverConfig = null,
         private readonly array $errorRenderers = [],
     ) {
     }
@@ -45,9 +45,9 @@ final class HttpApplication
         return $this->serverConfig()->ignitionEnabled;
     }
 
-    public function serverConfig(?HttpServerConfig $fallback = null): HttpServerConfig
+    public function serverConfig(?\Phalanx\Http\ServerConfig $fallback = null): \Phalanx\Http\ServerConfig
     {
-        return $this->serverConfig ?? $fallback ?? HttpServerConfig::defaults();
+        return $this->serverConfig ?? $fallback ?? \Phalanx\Http\ServerConfig::defaults();
     }
 
     public function startup(): self
@@ -77,7 +77,7 @@ final class HttpApplication
         return $this->runner()->dispatch($request);
     }
 
-    public function run(?string $listen = null, ?HttpServerConfig $fallback = null): int
+    public function run(?string $listen = null, ?\Phalanx\Http\ServerConfig $fallback = null): int
     {
         $config = $this->serverConfig($fallback);
 
@@ -91,7 +91,7 @@ final class HttpApplication
         return $this->runner?->activeRequests() ?? 0;
     }
 
-    private function runner(?HttpServerConfig $fallback = null): HttpRunner
+    private function runner(?\Phalanx\Http\ServerConfig $fallback = null): \Phalanx\Http\Runner
     {
         if ($this->runner !== null) {
             return $this->runner;
@@ -99,7 +99,7 @@ final class HttpApplication
 
         $config = $this->serverConfig($fallback);
 
-        $this->runner = HttpRunner::from($this->host, $config, errorRenderers: $this->errorRenderers)
+        $this->runner = \Phalanx\Http\Runner::from($this->host, $config, errorRenderers: $this->errorRenderers)
             ->withRoutes($this->routes);
 
         return $this->runner;

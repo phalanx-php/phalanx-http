@@ -12,8 +12,8 @@ use Phalanx\Runtime\RuntimeContext;
 use Phalanx\Http\RequestContext;
 use Phalanx\Http\Response\ResponseLeaseDomain;
 use Phalanx\Http\RouteGroup;
-use Phalanx\Http\HttpRequestResource;
-use Phalanx\Http\HttpRunner;
+use Phalanx\Http\RequestResource;
+use Phalanx\Http\Runner;
 use Phalanx\Task\Scopeable;
 use Phalanx\Testing\LeaseExpectation;
 use Phalanx\Testing\PhalanxTestCase;
@@ -28,7 +28,7 @@ final class HttpResponseLeaseTest extends PhalanxTestCase
 
         try {
             $context = new RuntimeContext($memory);
-            $resource = HttpRequestResource::open(
+            $resource = \Phalanx\Http\RequestResource::open(
                 runtime: $context,
                 request: new ServerRequest('GET', '/lease'),
                 token: CancellationToken::none(),
@@ -56,7 +56,7 @@ final class HttpResponseLeaseTest extends PhalanxTestCase
 
         try {
             $context = new RuntimeContext($memory);
-            $resource = HttpRequestResource::open(
+            $resource = \Phalanx\Http\RequestResource::open(
                 runtime: $context,
                 request: new ServerRequest('GET', '/lease'),
                 token: CancellationToken::none(),
@@ -84,7 +84,7 @@ final class HttpResponseLeaseTest extends PhalanxTestCase
 
         try {
             $context = new RuntimeContext($memory);
-            $resource = HttpRequestResource::open(
+            $resource = \Phalanx\Http\RequestResource::open(
                 runtime: $context,
                 request: new ServerRequest('GET', '/lease'),
                 token: CancellationToken::none(),
@@ -95,7 +95,7 @@ final class HttpResponseLeaseTest extends PhalanxTestCase
             $resource->acquireDeliveryLease(12);
             $resource->releaseDeliveryLease('abandoned:test');
 
-            (new LeaseExpectation($memory))->releasedFor(ResponseLeaseDomain::DOMAIN);
+            new LeaseExpectation($memory)->releasedFor(ResponseLeaseDomain::DOMAIN);
         } finally {
             $memory->shutdown();
         }
@@ -107,13 +107,13 @@ final class HttpResponseLeaseTest extends PhalanxTestCase
         $app = $this->startedApplication();
 
         $this->scope->run(static function () use ($app): void {
-            $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([
+            $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([
                 'GET /no-fd' => OkLeaseRoute::class,
             ]));
 
             $runner->dispatch(new ServerRequest('GET', '/no-fd'));
 
-            (new LeaseExpectation($app->runtime()->memory))->releasedFor(ResponseLeaseDomain::DOMAIN);
+            new LeaseExpectation($app->runtime()->memory)->releasedFor(ResponseLeaseDomain::DOMAIN);
         });
     }
 

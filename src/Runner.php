@@ -9,7 +9,6 @@ use GuzzleHttp\Psr7\Utils;
 use Phalanx\AppHost;
 use Phalanx\Cancellation\CancellationToken;
 use Phalanx\Cancellation\Cancelled;
-use Phalanx\Http\Http\Upgrade\UpgradeRegistry;
 use Phalanx\Http\Response\BufferEventDispatcher;
 use Phalanx\Http\Response\DefaultErrorResponseRenderer;
 use Phalanx\Http\Response\ErrorResponseRenderer;
@@ -35,13 +34,13 @@ use Swoole\Timer;
 use Throwable;
 
 /**
- * Native Http HTTP runner assembled by HttpApplication.
+ * Native HTTP runner assembled by Application.
  *
- * Bootstrap files should use `Http::starting($context)->routes(...)->run()`
+ * Bootstrap files should use `Server::starting($context)->routes(...)->run()`
  * so route loading, server config, and Runtime host setup stay behind the
- * Http facade.
+ * HTTP facade.
  */
-final class HttpRunner
+final class Runner
 {
     private bool $running = false;
     private bool $draining = false;
@@ -55,13 +54,13 @@ final class HttpRunner
     private string $listenAddress = '';
     private readonly BufferEventDispatcher $bufferEvents;
 
-    /** @var array<string, HttpRequestResource> */
+    /** @var array<string, \Phalanx\Http\RequestResource> */
     private array $activeRequestsById = [];
 
-    /** @var array<int, HttpRequestResource> */
+    /** @var array<int, \Phalanx\Http\RequestResource> */
     private array $activeRequestsByFd = [];
 
-    private readonly UpgradeRegistry $upgrades;
+    private readonly \Phalanx\Http\Upgrade\Registry $upgrades;
 
     /** @var list<ErrorResponseRenderer> */
     private array $errorRenderers = [];
@@ -69,20 +68,20 @@ final class HttpRunner
     /** @param list<ErrorResponseRenderer> $errorRenderers */
     private function __construct(
         private readonly AppHost $app,
-        private readonly HttpServerConfig $config = new HttpServerConfig(),
-        private readonly HttpRequestFactory $requestFactory = new HttpRequestFactory(),
-        private readonly HttpResponseWriter $responseWriter = new HttpResponseWriter(),
+        private readonly \Phalanx\Http\ServerConfig $config = new \Phalanx\Http\ServerConfig(),
+        private readonly \Phalanx\Http\RequestFactory $requestFactory = new \Phalanx\Http\RequestFactory(),
+        private readonly \Phalanx\Http\ResponseWriter $responseWriter = new \Phalanx\Http\ResponseWriter(),
         array $errorRenderers = [],
     ) {
         $this->bufferEvents = new BufferEventDispatcher();
-        $this->upgrades = new UpgradeRegistry();
+        $this->upgrades = new \Phalanx\Http\Upgrade\Registry();
         $this->errorRenderers = array_values($errorRenderers);
     }
 
     /** @param list<ErrorResponseRenderer> $errorRenderers */
     public static function from(
         AppHost $app,
-        HttpServerConfig $config = new HttpServerConfig(),
+        \Phalanx\Http\ServerConfig $config = new \Phalanx\Http\ServerConfig(),
         array $errorRenderers = [],
     ): self {
         return new self($app, $config, errorRenderers: $errorRenderers);
@@ -225,7 +224,7 @@ final class HttpRunner
         return $this;
     }
 
-    public function upgrades(): UpgradeRegistry
+    public function upgrades(): \Phalanx\Http\Upgrade\Registry
     {
         return $this->upgrades;
     }
@@ -236,7 +235,7 @@ final class HttpRunner
     }
 
     /** @return array<string, mixed> */
-    private static function serverOptions(HttpServerConfig $config): array
+    private static function serverOptions(\Phalanx\Http\ServerConfig $config): array
     {
         $options = [
             'worker_num' => 1,
@@ -403,14 +402,14 @@ final class HttpRunner
             $errorScope = $rootScope;
 
             $ownerScopeId = $rootScope->scopeId;
-            $resource = HttpRequestResource::open($this->app->runtime(), $request, $token, $fd, $ownerScopeId);
+            $resource = \Phalanx\Http\RequestResource::open($this->app->runtime(), $request, $token, $fd, $ownerScopeId);
             $this->registerRequest($resource);
             $registered = true;
             $resource->activate();
 
-            $diagnostics = new HttpRequestDiagnostics();
-            $rootScope->bindScopedInstance(HttpRequestResource::class, $resource, inherit: true);
-            $rootScope->bindScopedInstance(HttpRequestDiagnostics::class, $diagnostics, inherit: true);
+            $diagnostics = new \Phalanx\Http\RequestDiagnostics();
+            $rootScope->bindScopedInstance(\Phalanx\Http\RequestResource::class, $resource, inherit: true);
+            $rootScope->bindScopedInstance(\Phalanx\Http\RequestDiagnostics::class, $diagnostics, inherit: true);
             if ($target !== null) {
                 $rootScope->bindScopedInstance(ResponseSink::class, new ResponseSink($target), inherit: true);
             }
@@ -560,7 +559,7 @@ final class HttpRunner
     private function finish(
         ResponseInterface $response,
         ?Response $target,
-        HttpRequestResource $request,
+        \Phalanx\Http\RequestResource $request,
     ): ?ResponseInterface {
         try {
             $response = $this->normalizeResponseBody($response, $request);
@@ -628,7 +627,7 @@ final class HttpRunner
         return null;
     }
 
-    private function normalizeResponseBody(ResponseInterface $response, HttpRequestResource $request): ResponseInterface
+    private function normalizeResponseBody(ResponseInterface $response, \Phalanx\Http\RequestResource $request): ResponseInterface
     {
         if ($request->method !== 'HEAD' && !in_array($response->getStatusCode(), [204, 304], true)) {
             return $response;
@@ -646,7 +645,7 @@ final class HttpRunner
         return $response->withHeader('X-Powered-By', $this->config->poweredBy);
     }
 
-    private function registerRequest(HttpRequestResource $request): void
+    private function registerRequest(\Phalanx\Http\RequestResource $request): void
     {
         $this->activeRequestsById[$request->id] = $request;
 
@@ -655,7 +654,7 @@ final class HttpRunner
         }
     }
 
-    private function unregisterRequest(HttpRequestResource $request): void
+    private function unregisterRequest(\Phalanx\Http\RequestResource $request): void
     {
         unset($this->activeRequestsById[$request->id]);
 
@@ -770,7 +769,7 @@ final class HttpRunner
         }
     }
 
-    private function abortRequest(HttpRequestResource $request, HttpEventSid $event, string $reason): void
+    private function abortRequest(\Phalanx\Http\RequestResource $request, HttpEventSid $event, string $reason): void
     {
         $cancelled = null;
 
@@ -799,7 +798,7 @@ final class HttpRunner
     }
 
     private function recordRequestEvent(
-        HttpRequestResource $request,
+        \Phalanx\Http\RequestResource $request,
         HttpEventSid $event,
         string $valueA = '',
         string $valueB = '',
@@ -828,7 +827,7 @@ final class HttpRunner
         );
     }
 
-    private function errorResponse(Scope $scope, Throwable $e, HttpRequestResource $request): ResponseInterface
+    private function errorResponse(Scope $scope, Throwable $e, \Phalanx\Http\RequestResource $request): ResponseInterface
     {
         $requestScope = $scope instanceof RequestContext ? $scope : null;
         $defaultRenderer = new DefaultErrorResponseRenderer($this->config->ignitionEnabled);

@@ -26,10 +26,10 @@ use Phalanx\Http\RouteParams;
 use Phalanx\Http\Runtime\Identity\HttpAnnotationSid;
 use Phalanx\Http\Runtime\Identity\HttpEventSid;
 use Phalanx\Http\Runtime\Identity\HttpResourceSid;
-use Phalanx\Http\HttpRequestFactory;
-use Phalanx\Http\HttpRequestResource;
-use Phalanx\Http\HttpRunner;
-use Phalanx\Http\HttpServerConfig;
+use Phalanx\Http\RequestFactory;
+use Phalanx\Http\RequestResource;
+use Phalanx\Http\Runner;
+use Phalanx\Http\ServerConfig;
 use Phalanx\Task\Scopeable;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -57,7 +57,7 @@ final class HttpRunnerTest extends PhalanxTestCase
     {
         [$response, $activeRequests] = $this->withHttpRunner(RouteGroup::of([
             'GET /plaintext' => PlainTextHttpRoute::class,
-        ]), static function (HttpRunner $runner): array {
+        ]), static function (\Phalanx\Http\Runner $runner): array {
             $response = $runner->dispatch(new ServerRequest('GET', '/plaintext'));
 
             return [$response, $runner->activeRequests()];
@@ -75,7 +75,7 @@ final class HttpRunnerTest extends PhalanxTestCase
     {
         $response = $this->withHttpRunner(RouteGroup::of([
             'GET /head' => HeadHttpRoute::class,
-        ]), static fn(HttpRunner $runner) => $runner->dispatch(new ServerRequest('HEAD', '/head')));
+        ]), static fn(\Phalanx\Http\Runner $runner) => $runner->dispatch(new ServerRequest('HEAD', '/head')));
 
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('yes', $response->getHeaderLine('X-Head-Proof'));
@@ -88,7 +88,7 @@ final class HttpRunnerTest extends PhalanxTestCase
         [$empty, $cached] = $this->withHttpRunner(RouteGroup::of([
             'GET /empty' => NoContentHttpRoute::class,
             'GET /cached' => NotModifiedHttpRoute::class,
-        ]), static function (HttpRunner $runner): array {
+        ]), static function (\Phalanx\Http\Runner $runner): array {
             $empty = $runner->dispatch(new ServerRequest('GET', '/empty'));
             $cached = $runner->dispatch(new ServerRequest('GET', '/cached'));
 
@@ -106,18 +106,18 @@ final class HttpRunnerTest extends PhalanxTestCase
     {
         $default = $this->withHttpRunner(RouteGroup::of([
             'GET /plaintext' => PlainTextHttpRoute::class,
-        ]), static fn(HttpRunner $runner) => $runner->dispatch(new ServerRequest('GET', '/plaintext')));
+        ]), static fn(\Phalanx\Http\Runner $runner) => $runner->dispatch(new ServerRequest('GET', '/plaintext')));
 
         $custom = $this->withHttpRunner(RouteGroup::of([
             'GET /powered' => ExistingPoweredByHttpRoute::class,
-        ]), static fn(HttpRunner $runner) => $runner->dispatch(new ServerRequest('GET', '/powered')));
+        ]), static fn(\Phalanx\Http\Runner $runner) => $runner->dispatch(new ServerRequest('GET', '/powered')));
 
         $disabled = $this->withHttpRunner(
             RouteGroup::of([
                 'GET /plaintext' => PlainTextHttpRoute::class,
             ]),
-            static fn(HttpRunner $runner) => $runner->dispatch(new ServerRequest('GET', '/plaintext')),
-            new HttpServerConfig(poweredBy: null),
+            static fn(\Phalanx\Http\Runner $runner) => $runner->dispatch(new ServerRequest('GET', '/plaintext')),
+            new \Phalanx\Http\ServerConfig(poweredBy: null),
         );
 
         self::assertSame('Phalanx', $default->getHeaderLine('X-Powered-By'));
@@ -130,8 +130,8 @@ final class HttpRunnerTest extends PhalanxTestCase
     {
         $response = $this->withHttpRunner(RouteGroup::of([
             'GET /json' => JsonHttpRoute::class,
-        ]), static function (HttpRunner $runner) {
-            $request = (new ServerRequest('GET', '/json?name=phalanx'))
+        ]), static function (\Phalanx\Http\Runner $runner) {
+            $request = new ServerRequest('GET', '/json?name=phalanx')
                 ->withQueryParams(['name' => 'phalanx']);
 
             return $runner->dispatch($request);
@@ -150,7 +150,7 @@ final class HttpRunnerTest extends PhalanxTestCase
     {
         [$response, $body, $resourceEvents, $released] = $this->withHttpRunner(RouteGroup::of([
             'GET /resource/{id:int}' => ResourceAwareHttpRoute::class,
-        ]), static function (HttpRunner $runner, Application $app): array {
+        ]), static function (\Phalanx\Http\Runner $runner, Application $app): array {
             $response = $runner->dispatch(new ServerRequest('GET', '/resource/42'));
             $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
             $events = $app->runtime()->memory->events->recent();
@@ -179,7 +179,7 @@ final class HttpRunnerTest extends PhalanxTestCase
 
         [$response, $body, $activeRequests, $liveRequests] = $this->withHttpRunner(RouteGroup::of([
             'GET /long/{slug}' => LongPathHttpRoute::class,
-        ]), static function (HttpRunner $runner, Application $app) use ($path): array {
+        ]), static function (\Phalanx\Http\Runner $runner, Application $app) use ($path): array {
             $response = $runner->dispatch(new ServerRequest('GET', $path));
             $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
             $activeRequests = $runner->activeRequests();
@@ -200,7 +200,7 @@ final class HttpRunnerTest extends PhalanxTestCase
     {
         [$caught, $activeRequests, $liveResources] = $this->withHttpRunner(RouteGroup::of([
             'GET /plaintext' => PlainTextHttpRoute::class,
-        ]), static function (HttpRunner $runner, Application $app): array {
+        ]), static function (\Phalanx\Http\Runner $runner, Application $app): array {
             $caught = null;
 
             try {
@@ -228,7 +228,7 @@ final class HttpRunnerTest extends PhalanxTestCase
 
         try {
             try {
-                HttpRequestResource::open($runtime, $request, $token);
+                \Phalanx\Http\RequestResource::open($runtime, $request, $token);
             } catch (RuntimeException $e) {
                 $caught = $e;
             }
@@ -273,13 +273,13 @@ final class HttpRunnerTest extends PhalanxTestCase
             RouteGroup::of([
                 'GET /fail' => FailingHttpRoute::class,
             ]),
-            static function (HttpRunner $runner, Application $app): array {
+            static function (\Phalanx\Http\Runner $runner, Application $app): array {
                 $response = $runner->dispatch(new ServerRequest('GET', '/fail'));
                 $events = $app->runtime()->memory->events->recent();
 
                 return [$response, $events];
             },
-            new HttpServerConfig(ignitionEnabled: true),
+            new \Phalanx\Http\ServerConfig(ignitionEnabled: true),
         );
 
         self::assertSame(500, $response->getStatusCode());
@@ -318,7 +318,7 @@ final class HttpRunnerTest extends PhalanxTestCase
         $request->cookie = ['sid' => 'abc'];
         $request->post = ['name' => 'Ada'];
 
-        $psrRequest = (new HttpRequestFactory())->create($request);
+        $psrRequest = new \Phalanx\Http\RequestFactory()->create($request);
 
         self::assertSame('POST', $psrRequest->getMethod());
         self::assertSame('/submit', $psrRequest->getUri()->getPath());
@@ -357,7 +357,7 @@ final class HttpRunnerTest extends PhalanxTestCase
         ];
 
         try {
-            $psrRequest = (new HttpRequestFactory())->create($request);
+            $psrRequest = new \Phalanx\Http\RequestFactory()->create($request);
         } finally {
             @unlink($tmpFile);
         }
@@ -398,7 +398,7 @@ final class HttpRunnerTest extends PhalanxTestCase
         ];
 
         try {
-            $psrRequest = (new HttpRequestFactory())->create($request);
+            $psrRequest = new \Phalanx\Http\RequestFactory()->create($request);
         } finally {
             @unlink($first);
             @unlink($second);
@@ -443,7 +443,7 @@ final class HttpRunnerTest extends PhalanxTestCase
         ];
 
         try {
-            $psrRequest = (new HttpRequestFactory())->create($request);
+            $psrRequest = new \Phalanx\Http\RequestFactory()->create($request);
         } finally {
             @unlink($present);
         }
@@ -471,7 +471,7 @@ final class HttpRunnerTest extends PhalanxTestCase
             'accept' => 'application/json, text/plain',
         ];
 
-        $psrRequest = (new HttpRequestFactory())->create($request);
+        $psrRequest = new \Phalanx\Http\RequestFactory()->create($request);
 
         self::assertSame('application/json', $psrRequest->getHeaderLine('Content-Type'));
         self::assertSame('application/json', $psrRequest->getHeaderLine('CONTENT-TYPE'));
@@ -505,18 +505,18 @@ final class HttpRunnerTest extends PhalanxTestCase
 
     /**
      * @template T
-     * @param Closure(HttpRunner, Application): T $test
+     * @param Closure(\Phalanx\Http\Runner, Application):T $test
      * @return T
      */
     private function withHttpRunner(
         RouteGroup $routes,
         Closure $test,
-        ?HttpServerConfig $config = null,
+        ?\Phalanx\Http\ServerConfig $config = null,
     ): mixed {
         $app = $this->startedApplication();
 
         return $this->scope->run(static function () use ($routes, $test, $config, $app): mixed {
-            $runner = ($config === null ? HttpRunner::from($app) : HttpRunner::from($app, $config))
+            $runner = ($config === null ? \Phalanx\Http\Runner::from($app) : \Phalanx\Http\Runner::from($app, $config))
                 ->withRoutes($routes);
 
             return $test($runner, $app);

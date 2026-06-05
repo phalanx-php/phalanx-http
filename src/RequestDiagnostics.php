@@ -6,7 +6,7 @@ namespace Phalanx\Http;
 
 use Phalanx\Supervisor\TaskRunSnapshot;
 
-final class HttpRequestDiagnostics
+final class RequestDiagnostics
 {
     /** @var list<TaskRunSnapshot> */
     private array $failureTree = [];

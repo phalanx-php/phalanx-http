@@ -8,7 +8,7 @@ use Phalanx\Application;
 use Phalanx\Registry\RegistryScope;
 use Phalanx\Server\ServerStats;
 use Phalanx\Http\RouteGroup;
-use Phalanx\Http\HttpRunner;
+use Phalanx\Http\Runner;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -20,7 +20,7 @@ final class HttpRunnerActiveRequestsTest extends TestCase
         $app = Application::starting()->compile()->startup();
 
         try {
-            $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
+            $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
 
             self::assertSame(0, $runner->activeRequests());
             self::assertSame(0, $runner->activeRequests(RegistryScope::Worker));
@@ -37,7 +37,7 @@ final class HttpRunnerActiveRequestsTest extends TestCase
         $app = Application::starting()->compile()->startup();
 
         try {
-            $runner = HttpRunner::from($app)
+            $runner = \Phalanx\Http\Runner::from($app)
                 ->withRoutes(RouteGroup::of([]))
                 ->withServerStats(ServerStats::fromArray([
                     'connection_num' => 17,
@@ -59,7 +59,7 @@ final class HttpRunnerActiveRequestsTest extends TestCase
         $app = Application::starting()->compile()->startup();
 
         try {
-            $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
+            $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
 
             self::assertSame(0, $runner->activeRequests(RegistryScope::Server));
         } finally {

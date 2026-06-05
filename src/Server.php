@@ -6,15 +6,15 @@ namespace Phalanx\Http;
 
 use Phalanx\Boot\AppContext;
 
-final readonly class Http
+final readonly class Server
 {
     private function __construct()
     {
     }
 
     /** @param array<string,mixed> $context */
-    public static function starting(array $context = []): HttpApplicationBuilder
+    public static function starting(array $context = []): \Phalanx\Http\ApplicationBuilder
     {
-        return new HttpApplicationBuilder(new AppContext($context));
+        return new \Phalanx\Http\ApplicationBuilder(new AppContext($context));
     }
 }

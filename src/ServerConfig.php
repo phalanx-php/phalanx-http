@@ -6,7 +6,7 @@ namespace Phalanx\Http;
 
 use Phalanx\Boot\AppContext;
 
-final readonly class HttpServerConfig
+final readonly class ServerConfig
 {
     public function __construct(
         public string $host = '0.0.0.0',

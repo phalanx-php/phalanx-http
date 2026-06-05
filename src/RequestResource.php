@@ -20,7 +20,7 @@ use Phalanx\Supervisor\DeliveryLease;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
-final class HttpRequestResource
+final class RequestResource
 {
     private const int ANNOTATION_LIMIT = 240;
     private const int EVENT_LIMIT = 120;
@@ -94,8 +94,8 @@ final class HttpRequestResource
 
     /**
      * Cancellation token bound to this HTTP request lifecycle. Cancels when
-     * Http aborts the request (e.g., {@see HttpRunner::handleClose} on fd
-     * disconnect). Exposed so {@see HttpUpgradeable} implementations can chain
+     * HTTP aborts the request (e.g., {@see Runner::handleClose} on fd
+     * disconnect). Exposed so {@see \Phalanx\Http\Upgrade\Upgradeable} implementations can chain
      * downstream session tokens to abrupt-disconnect propagation.
      */
     public function cancellation(): CancellationToken

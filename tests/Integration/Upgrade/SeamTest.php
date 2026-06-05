@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Http\Tests\Integration\Http\Upgrade;
+namespace Phalanx\Http\Tests\Integration\Upgrade;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Phalanx\Http\HttpRunner;
+use Phalanx\Http\Runner;
 use Phalanx\Http\RouteGroup;
 use Phalanx\Scope\ExecutionScope;
 use Phalanx\Testing\PhalanxTestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-final class HttpUpgradeSeamTest extends PhalanxTestCase
+final class SeamTest extends PhalanxTestCase
 {
     #[Test]
     public function upgradeRequestWithoutRegistrarReturns426(): void
@@ -19,7 +19,7 @@ final class HttpUpgradeSeamTest extends PhalanxTestCase
         $app = $this->startedApplication();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
-            $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
+            $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
 
             $response = $runner->dispatch(
                 new ServerRequest('GET', '/socket')
@@ -37,7 +37,7 @@ final class HttpUpgradeSeamTest extends PhalanxTestCase
         $app = $this->startedApplication();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
-            $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
+            $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
 
             $response = $runner->dispatch(new ServerRequest('GET', '/somewhere'));
 
@@ -51,7 +51,7 @@ final class HttpUpgradeSeamTest extends PhalanxTestCase
         $app = $this->startedApplication();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
-            $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
+            $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
 
             $response = $runner->dispatch(
                 new ServerRequest('GET', '/somewhere')
@@ -68,7 +68,7 @@ final class HttpUpgradeSeamTest extends PhalanxTestCase
         $app = $this->startedApplication();
 
         $this->scope->run(static function (ExecutionScope $_scope) use ($app): void {
-            $runner = HttpRunner::from($app)->withRoutes(RouteGroup::of([]));
+            $runner = \Phalanx\Http\Runner::from($app)->withRoutes(RouteGroup::of([]));
 
             self::assertNull($runner->upgrades()->resolve('h2c'));
             self::assertCount(0, $runner->upgrades()->tokens());

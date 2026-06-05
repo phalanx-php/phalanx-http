@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Phalanx\Http\Http\Upgrade;
+namespace Phalanx\Http\Upgrade;
 
-use Phalanx\Http\HttpRequestResource;
 use Phalanx\Runtime\Memory\ManagedResourceHandle;
 use Psr\Http\Message\ServerRequestInterface;
 use Swoole\Http\Response;
@@ -19,9 +18,9 @@ use Swoole\Http\Response;
  * resource via {@see ManagedResourceRegistry::upgrade()}.
  *
  * WebSocket provides the WebSocket implementation; other protocols can
- * register their own upgradeables through the {@see UpgradeRegistry}.
+ * register their own upgradeables through the {@see Registry}.
  */
-interface HttpUpgradeable
+interface Upgradeable
 {
     /**
      * Take ownership of the upgrading connection.
@@ -32,6 +31,6 @@ interface HttpUpgradeable
     public function upgrade(
         ServerRequestInterface $request,
         Response $target,
-        HttpRequestResource $requestResource,
+        \Phalanx\Http\RequestResource $requestResource,
     ): ManagedResourceHandle;
 }

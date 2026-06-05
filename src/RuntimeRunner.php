@@ -6,11 +6,11 @@ namespace Phalanx\Http;
 
 use Symfony\Component\Runtime\RunnerInterface;
 
-final readonly class HttpRuntimeRunner implements RunnerInterface
+final readonly class RuntimeRunner implements RunnerInterface
 {
     public function __construct(
-        private HttpApplication $application,
-        private ?HttpServerConfig $serverConfig = null,
+        private \Phalanx\Http\Application $application,
+        private ?\Phalanx\Http\ServerConfig $serverConfig = null,
     ) {
     }
 
